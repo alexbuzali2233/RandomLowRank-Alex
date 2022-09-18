@@ -21,6 +21,30 @@ def getMatrix(dim, k, res, rowSpace = 'random', spectrum = 'smooth gap',
     #Constructing the row space (right singular subspace) of the matrix
     if rowSpace == 'random':
         V = qr(np.random.normal(size=(dim,dim)))[0]
+    elif rowSpace == 'hadamard':
+
+        #Scipy hadamard only works for powers of 2. Can manually save other
+        #Hadamard matrices using saveHadamard.jl and then load them here
+        try:
+            V= hadamard(dim)/np.sqrt(dim)
+        except:
+            V=np.load(r'Hadamard Matrices/hadamard' + str(dim) + '.npy')/np.sqrt(dim)
+    elif rowSpace == 'incoherent':
+        try:
+            V= hadamard(dim)/np.sqrt(dim)
+        except:
+            V=np.load(r'Hadamard Matrices/hadamard' + str(dim) + '.npy')/np.sqrt(dim)
+        
+        L, _, R = np.linalg.svd(V + .1*np.random.normal(size=(dim,dim)))
+        V=L@R.T
+    elif rowSpace == 'permutation':
+        V=np.eye(dim)[:,np.random.permutation(dim)]
+    elif rowSpace == 'coherent':
+        V=np.eye(dim)[:,np.random.permutation(dim)]
+        L, _, R = np.linalg.svd(V + .1*np.random.normal(size=(dim,dim)))
+        V=L@R
+    else:
+        raise Exception ('Not a valid row space.')
     
     #Constructing the singular spectrum
     if spectrum == 'smooth gap':
@@ -37,4 +61,6 @@ def getMatrix(dim, k, res, rowSpace = 'random', spectrum = 'smooth gap',
     if returnSVD:
         return U, sigma, V
     else:
-        return U@sigma@V.T
+        return U @ sigma@ V.T
+
+getMatrix(96,48,.7,'coherent')

@@ -75,7 +75,6 @@ function get_matrix(dim::Int, k::Int, res::Float64; spectrum::String = "projecto
 	elseif(spectrum == "smooth_gap")
 		decaylength = floor(Int64, .7*k)	
 		x = Array(range(0., 1., dim))
-		print(x)
 		x .*= 5/(x[k] - x[k - decaylength])
 		x .+= 2.5 - x[k]
 		
@@ -120,5 +119,3 @@ function get_matrix(dim::Int, k::Int, res::Float64; spectrum::String = "projecto
 		return U*diagm(sing_vals)*V'
 	end
 end
-
-get_matrix(5,2,.5)
