@@ -2,6 +2,7 @@ import numpy as np
 from numpy.linalg import qr
 from scipy.special import erfc
 from scipy.linalg import hadamard
+from helpers import coherence
 import matplotlib.pyplot as plt
 
 def getMatrix(dim, k, res, rowSpace = 'random', spectrum = 'smooth gap',
@@ -62,5 +63,3 @@ def getMatrix(dim, k, res, rowSpace = 'random', spectrum = 'smooth gap',
         return U, sigma, V
     else:
         return U @ sigma@ V.T
-
-getMatrix(96,48,.7,'coherent')
