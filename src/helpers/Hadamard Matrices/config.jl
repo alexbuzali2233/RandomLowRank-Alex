@@ -1,0 +1,1 @@
+hadamardMatrixPath = "Hadamard Matrices/"
