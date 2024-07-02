@@ -4,16 +4,18 @@ from scipy.special import erfc
 from scipy.linalg import hadamard
 from ..config import *
 
-def getMatrix(dim, k, res, rowSpace = 'random', spectrum = 'smooth gap',
-                returnSVD = False, coherenceScalar = .1, steepness = 1):
+class spectrumObject():
+
+    def __init__(self, levels, decayRange, decayTypes):
+        self.levels = levels
+        self.decayRange = decayRange
+        self.decayTypes = decayTypes
+
+def getMatrix(dim, rowSpace, spectrum, returnSVD = False, coherenceScalar = .1):
     
     #Check for valid inputs
     assert type(dim) == int and dim > 0, 'Matrix dimension must be a positive '\
     'integer.'
-    assert type(k) == int and k > 0, 'Target rank must be a positive integer.'
-    assert type(dim >= k), 'Target rank cannot excced matrix dimension'
-    assert res >0 and res < 1, 'Target residual must be in the open '\
-    'interval (0,1).'
 
     #Constructing the column space (left singular subspace) of the matrix
     U = qr(np.random.normal(size=(dim,dim)))[0]
@@ -49,23 +51,47 @@ def getMatrix(dim, k, res, rowSpace = 'random', spectrum = 'smooth gap',
         raise Exception ('Not a valid row space.')
     
     #Constructing the singular spectrum
-    if spectrum == 'smooth gap':
-        decayLength = int(np.floor(.7*k))
-        x = np.linspace(0, 1, dim)
-        x *= steepness*5/(x[k-1] - x[k-1-decayLength])
-        x += 2.5 - x[k-1]
-        
-        singularValues = .5*(1+erfc(x))/1.5
-        beta = np.log(res)/np.log(singularValues[k])
-        singularValues **= beta
+    # if spectrum == 'smooth gap':
+    #     decayLength = int(np.floor(.7*k))
+    #     x = np.linspace(0, 1, dim)
+    #     x *= 5/(x[k-1] - x[k-1-decayLength])
+    #     x += 2.5 - x[k-1]
+    #
+    #     singularValues = .5*(1+erfc(steepness*x))/1.5
+    #     beta = np.log(res)/np.log(singularValues[k])
+    #     singularValues **= beta
+    #     sigma = np.diag(singularValues)
+
+    levels = spectrum.levels
+    ranges = spectrum.decayRange
+    types = spectrum.decayTypes
+    singularValues = np.zeros(dim)
+
+    for typeIndex in range(len(types)):
+        levelIndex = typeIndex
+        rangeIndex = 2*typeIndex
+
+        #First flat section
+        singularValues[0:ranges[rangeIndex]] = levels[levelIndex] * np.ones(ranges[rangeIndex])
+
+        #Decay region
+        numDecayPoints = ranges[rangeIndex + 1] - ranges[rangeIndex] + 1
+        if types[typeIndex] == 'smoothgap':
+            t = np.linspace(-2, 2, numDecayPoints)
+            decayCurve = .5 * (erfc(t) + 1)
+            beta = np.log(levels[levelIndex]/levels[levelIndex + 1])/np.log(2.981)
+            decayCurve **= beta
+            decayCurve *= levels[levelIndex]/decayCurve[0]
+
+        singularValues[ranges[rangeIndex]:ranges[rangeIndex + 1] + 1] = decayCurve
+
+        #Last flat section
+        lastIndexSet = ranges[rangeIndex + 1]
+        singularValues[lastIndexSet:] = levels[-1]*np.ones(dim - lastIndexSet)
+
         sigma = np.diag(singularValues)
 
     if returnSVD:
         return U, sigma, V
     else:
         return U @ sigma@ V.T
-
-# U,sigma,V = getMatrix(96,48,1e-12,'incoherent',returnSVD = True)
-# k = np.arange(0,96,1)
-# plt.plot(k,np.diag(sigma))
-# plt.show()
